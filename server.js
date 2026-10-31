@@ -1,4 +1,6 @@
 
+require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -8,13 +10,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
+// MongoDB Atlas connection
 mongoose
-  .connect("mongodb://127.0.0.1:27017/taskmanager")
+  .connect(process.env.MONGODB_URI)
   .then(() => {
-    console.log("MongoDB Connected");
-    app.listen(5000, () => {
-      console.log("Server running at http://localhost:5000");
+    console.log("MongoDB Atlas Connected");
+
+    const PORT = process.env.PORT || 5000;
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((error) => {
@@ -44,6 +49,11 @@ const taskSchema = new mongoose.Schema(
 
 const Task = mongoose.model("Task", taskSchema);
 
+// Test route
+app.get("/", (req, res) => {
+  res.send("Task Manager Backend is Running!");
+});
+
 // Get all tasks
 app.get("/tasks", async (req, res) => {
   try {
@@ -54,13 +64,15 @@ app.get("/tasks", async (req, res) => {
   }
 });
 
-// Add a task
+// Add task
 app.post("/tasks", async (req, res) => {
   try {
     const { title, description } = req.body;
 
     if (!title || !title.trim()) {
-      return res.status(400).json({ message: "Task title is required" });
+      return res.status(400).json({
+        message: "Task title is required",
+      });
     }
 
     const task = await Task.create({ title, description });
@@ -70,7 +82,7 @@ app.post("/tasks", async (req, res) => {
   }
 });
 
-// Update task status
+// Update status
 app.patch("/tasks/:id", async (req, res) => {
   try {
     const task = await Task.findByIdAndUpdate(
@@ -89,7 +101,7 @@ app.patch("/tasks/:id", async (req, res) => {
   }
 });
 
-// Delete a task
+// Delete task
 app.delete("/tasks/:id", async (req, res) => {
   try {
     const task = await Task.findByIdAndDelete(req.params.id);
